@@ -114,6 +114,18 @@ Trigger a specific Homey Flow.
 npm run watch
 ```
 
+### Lint
+
+```bash
+npm run lint
+```
+
+### Fix Linting Errors
+
+```bash
+npm run lint:fix
+```
+
 ### Project Structure
 
 ```

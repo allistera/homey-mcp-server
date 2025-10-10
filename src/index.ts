@@ -12,19 +12,9 @@ import { HomeyAPI } from 'homey-api';
 const HOMEY_API_TOKEN = process.env.HOMEY_API_TOKEN || '';
 const HOMEY_LOCAL_IP = process.env.HOMEY_LOCAL_IP || '';
 
-interface HomeyDevice {
-  id: string;
-  name: string;
-  zone?: { name: string };
-  class?: string;
-  capabilities?: string[];
-  capabilitiesObj?: Record<string, any>;
-  available?: boolean;
-}
-
 class HomeyMCPServer {
   private server: Server;
-  private homeyApi: any | null = null;
+  private homeyApi: unknown | null = null;
 
   constructor() {
     this.server = new Server(
@@ -155,14 +145,17 @@ class HomeyMCPServer {
         switch (request.params.name) {
           case 'list_devices': {
             const devices = await this.homeyApi.devices.getDevices();
-            const deviceList = Object.values(devices).map((device: any) => ({
-              id: device.id,
-              name: device.name,
-              zone: device.zone?.name,
-              class: device.class,
-              available: device.available,
-              capabilities: device.capabilities,
-            }));
+            const deviceList = Object.values(devices).map((device: unknown) => {
+              const dev = device as { id: string; name: string; zone?: { name: string }; class: string; available: boolean; capabilities: string[] };
+              return {
+                id: dev.id,
+                name: dev.name,
+                zone: dev.zone?.name,
+                class: dev.class,
+                available: dev.available,
+                capabilities: dev.capabilities,
+              };
+            });
 
             return {
               content: [
@@ -204,7 +197,7 @@ class HomeyMCPServer {
             const { deviceId, capability, value } = request.params.arguments as {
               deviceId: string;
               capability: string;
-              value: any;
+              value: unknown;
             };
 
             const device = await this.homeyApi.devices.getDevice({ id: deviceId });
@@ -222,11 +215,14 @@ class HomeyMCPServer {
 
           case 'list_zones': {
             const zones = await this.homeyApi.zones.getZones();
-            const zoneList = Object.values(zones).map((zone: any) => ({
-              id: zone.id,
-              name: zone.name,
-              parent: zone.parent?.name,
-            }));
+            const zoneList = Object.values(zones).map((zone: unknown) => {
+              const z = zone as { id: string; name: string; parent?: { name: string } };
+              return {
+                id: z.id,
+                name: z.name,
+                parent: z.parent?.name,
+              };
+            });
 
             return {
               content: [
@@ -240,11 +236,14 @@ class HomeyMCPServer {
 
           case 'list_flows': {
             const flows = await this.homeyApi.flow.getFlows();
-            const flowList = Object.values(flows).map((flow: any) => ({
-              id: flow.id,
-              name: flow.name,
-              enabled: flow.enabled,
-            }));
+            const flowList = Object.values(flows).map((flow: unknown) => {
+              const f = flow as { id: string; name: string; enabled: boolean };
+              return {
+                id: f.id,
+                name: f.name,
+                enabled: f.enabled,
+              };
+            });
 
             return {
               content: [
