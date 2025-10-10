@@ -43,9 +43,45 @@ HOMEY_LOCAL_IP=192.168.1.xxx
 
 ### Running the Server
 
+#### With Node.js
+
 ```bash
 npm run build
 node dist/index.js
+```
+
+#### With Docker
+
+Build the Docker image:
+
+```bash
+docker build -t mcp-server-homey .
+```
+
+Run the container:
+
+```bash
+docker run -e HOMEY_API_TOKEN=your_api_token_here -e HOMEY_LOCAL_IP=192.168.1.xxx mcp-server-homey
+```
+
+Or use docker-compose (create a `docker-compose.yml`):
+
+```yaml
+version: '3.8'
+services:
+  mcp-server-homey:
+    image: mcp-server-homey
+    build: .
+    environment:
+      - HOMEY_API_TOKEN=your_api_token_here
+      - HOMEY_LOCAL_IP=192.168.1.xxx
+    restart: unless-stopped
+```
+
+Then run:
+
+```bash
+docker-compose up -d
 ```
 
 ### Claude Desktop Configuration
