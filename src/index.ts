@@ -12,9 +12,36 @@ import { HomeyAPI } from 'homey-api';
 const HOMEY_API_TOKEN = process.env.HOMEY_API_TOKEN || '';
 const HOMEY_LOCAL_IP = process.env.HOMEY_LOCAL_IP || '';
 
+interface HomeyAPIInstance {
+  devices: {
+    getDevices(): Promise<Record<string, unknown>>;
+    getDevice(params: { id: string }): Promise<{
+      id: string;
+      name: string;
+      zone?: { name: string };
+      class: string;
+      available: boolean;
+      capabilities: string[];
+      capabilitiesObj?: Record<string, unknown>;
+      setCapabilityValue(params: { capabilityId: string; value: unknown }): Promise<void>;
+    }>;
+  };
+  zones: {
+    getZones(): Promise<Record<string, unknown>>;
+  };
+  flow: {
+    getFlows(): Promise<Record<string, unknown>>;
+    getFlow(params: { id: string }): Promise<{
+      id: string;
+      name: string;
+      trigger(): Promise<void>;
+    }>;
+  };
+}
+
 class HomeyMCPServer {
   private server: Server;
-  private homeyApi: unknown | null = null;
+  private homeyApi: HomeyAPIInstance | null = null;
 
   constructor() {
     this.server = new Server(
@@ -50,7 +77,7 @@ class HomeyMCPServer {
       address: `http://${HOMEY_LOCAL_IP}`,
       token: HOMEY_API_TOKEN,
       debug: null,
-    });
+    }) as HomeyAPIInstance;
   }
 
   private setupToolHandlers(): void {
@@ -200,8 +227,26 @@ class HomeyMCPServer {
               value: unknown;
             };
 
+            console.error(`[DEBUG] set_capability - capability: ${capability}, value: ${JSON.stringify(value)}, type: ${typeof value}`);
+
             const device = await this.homeyApi.devices.getDevice({ id: deviceId });
-            await device.setCapabilityValue({ capabilityId: capability, value });
+
+            let coercedValue = value;
+            if (capability === 'onoff') {
+              if (typeof value === 'string') {
+                coercedValue = value === 'true' || value === '1';
+              } else if (typeof value === 'number') {
+                coercedValue = value !== 0;
+              }
+            } else if (capability === 'dim' || capability === 'target_temperature' || capability === 'volume_set') {
+              if (typeof value === 'string') {
+                coercedValue = parseFloat(value);
+              }
+            }
+
+            console.error(`[DEBUG] coercedValue: ${JSON.stringify(coercedValue)}, type: ${typeof coercedValue}`);
+
+            await device.setCapabilityValue({ capabilityId: capability, value: coercedValue });
 
             return {
               content: [
