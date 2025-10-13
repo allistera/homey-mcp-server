@@ -67,7 +67,7 @@ docker build -t mcp-server-homey .
 Run the container:
 
 ```bash
-docker run -e HOMEY_API_TOKEN=your_api_token_here -e HOMEY_LOCAL_IP=192.168.1.xxx mcp-server-homey
+docker run -e HOMEY_API_TOKEN=your_api_token_here -e HOMEY_LOCAL_IP=192.168.1.xxx ghcr.io/allistera/homey-mcp-server:sha-17795a4
 ```
 
 Or use docker-compose (create a `docker-compose.yml`):
@@ -76,7 +76,7 @@ Or use docker-compose (create a `docker-compose.yml`):
 version: '3.8'
 services:
   mcp-server-homey:
-    image: mcp-server-homey
+    image: ghcr.io/allistera/homey-mcp-server:sha-17795a4
     build: .
     environment:
       - HOMEY_API_TOKEN=your_api_token_here
