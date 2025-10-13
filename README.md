@@ -9,6 +9,12 @@ Model Context Protocol (MCP) server for interacting with the Homey smart home pl
 - **Zone Management**: List and organize zones
 - **Flow Automation**: List and trigger Homey Flows
 
+## Examples
+
+- "Show me all lights that are on downstairs"
+- "Can you turn on the livingroom light and set its brightness to 75%"
+- "What is the livingrooms temperature?"
+
 ## Prerequisites
 
 - Node.js >= 18
