@@ -80,6 +80,51 @@ class HomeyMCPServer {
     }) as HomeyAPIInstance;
   }
 
+  private coerceCapabilityValue(capability: string, value: unknown): unknown {
+    if (capability === 'onoff') {
+      if (typeof value === 'string') {
+        return value === 'true' || value === '1';
+      } else if (typeof value === 'number') {
+        return value !== 0;
+      }
+    } else if (capability === 'dim' || capability === 'target_temperature' || capability === 'volume_set') {
+      if (typeof value === 'string') {
+        return parseFloat(value);
+      }
+    }
+    return value;
+  }
+
+  private formatDeviceInfo(device: unknown) {
+    const dev = device as { id: string; name: string; zone?: { name: string }; class: string; available: boolean; capabilities: string[] };
+    return {
+      id: dev.id,
+      name: dev.name,
+      zone: dev.zone?.name,
+      class: dev.class,
+      available: dev.available,
+      capabilities: dev.capabilities,
+    };
+  }
+
+  private formatZoneInfo(zone: unknown) {
+    const z = zone as { id: string; name: string; parent?: { name: string } };
+    return {
+      id: z.id,
+      name: z.name,
+      parent: z.parent?.name,
+    };
+  }
+
+  private formatFlowInfo(flow: unknown) {
+    const f = flow as { id: string; name: string; enabled: boolean };
+    return {
+      id: f.id,
+      name: f.name,
+      enabled: f.enabled,
+    };
+  }
+
   private setupToolHandlers(): void {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       const tools: Tool[] = [
@@ -172,17 +217,7 @@ class HomeyMCPServer {
         switch (request.params.name) {
           case 'list_devices': {
             const devices = await this.homeyApi.devices.getDevices();
-            const deviceList = Object.values(devices).map((device: unknown) => {
-              const dev = device as { id: string; name: string; zone?: { name: string }; class: string; available: boolean; capabilities: string[] };
-              return {
-                id: dev.id,
-                name: dev.name,
-                zone: dev.zone?.name,
-                class: dev.class,
-                available: dev.available,
-                capabilities: dev.capabilities,
-              };
-            });
+            const deviceList = Object.values(devices).map((device) => this.formatDeviceInfo(device));
 
             return {
               content: [
@@ -227,24 +262,8 @@ class HomeyMCPServer {
               value: unknown;
             };
 
-            console.error(`[DEBUG] set_capability - capability: ${capability}, value: ${JSON.stringify(value)}, type: ${typeof value}`);
-
             const device = await this.homeyApi.devices.getDevice({ id: deviceId });
-
-            let coercedValue = value;
-            if (capability === 'onoff') {
-              if (typeof value === 'string') {
-                coercedValue = value === 'true' || value === '1';
-              } else if (typeof value === 'number') {
-                coercedValue = value !== 0;
-              }
-            } else if (capability === 'dim' || capability === 'target_temperature' || capability === 'volume_set') {
-              if (typeof value === 'string') {
-                coercedValue = parseFloat(value);
-              }
-            }
-
-            console.error(`[DEBUG] coercedValue: ${JSON.stringify(coercedValue)}, type: ${typeof coercedValue}`);
+            const coercedValue = this.coerceCapabilityValue(capability, value);
 
             await device.setCapabilityValue({ capabilityId: capability, value: coercedValue });
 
@@ -260,14 +279,7 @@ class HomeyMCPServer {
 
           case 'list_zones': {
             const zones = await this.homeyApi.zones.getZones();
-            const zoneList = Object.values(zones).map((zone: unknown) => {
-              const z = zone as { id: string; name: string; parent?: { name: string } };
-              return {
-                id: z.id,
-                name: z.name,
-                parent: z.parent?.name,
-              };
-            });
+            const zoneList = Object.values(zones).map((zone) => this.formatZoneInfo(zone));
 
             return {
               content: [
@@ -281,14 +293,7 @@ class HomeyMCPServer {
 
           case 'list_flows': {
             const flows = await this.homeyApi.flow.getFlows();
-            const flowList = Object.values(flows).map((flow: unknown) => {
-              const f = flow as { id: string; name: string; enabled: boolean };
-              return {
-                id: f.id,
-                name: f.name,
-                enabled: f.enabled,
-              };
-            });
+            const flowList = Object.values(flows).map((flow) => this.formatFlowInfo(flow));
 
             return {
               content: [
