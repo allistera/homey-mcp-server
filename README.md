@@ -1,3 +1,8 @@
+# UPDATE
+
+Homey now offer their own MCP Server: https://homey.app/en-gb/news/introducing-the-homey-mcp-server/ 
+
+
 # MCP Server for Homey
 
 Model Context Protocol (MCP) server for interacting with the Homey smart home platform.
